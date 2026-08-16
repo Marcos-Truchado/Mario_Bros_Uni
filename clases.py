@@ -35,6 +35,11 @@ class Mario:
     @property
     def sprite(self) -> tuple:
         return (0, 0, 0, self.mario_size[0], self.mario_size[1])
+    def frame_sprite(self, direccion: int, frame: int) -> tuple:
+        """Devuelve el sprite animado de Mario (banco 2): direccion 1 =
+        derecha, 2 = izquierda, frame 0 = quieto, 1-2 = pasos de caminar."""
+        fila = 0 if direccion == 1 else 16
+        return (2, frame * 16, fila, self.mario_size[0], self.mario_size[1])
     @property
     def vidas(self) -> int:
         return self.__vidas
@@ -69,7 +74,7 @@ class Mario:
         # Almacena la posición previa de Mario antes de aplicar la gravedad
         old_y = self.y
         # Si se mantiene presionada la tecla de espacio y Mario está en el suelo o encima de un bloque, realiza el salto
-        if pyxel.btnp(pyxel.KEY_SPACE) and (
+        if (pyxel.btnp(pyxel.KEY_SPACE) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_A)) and (
                 self.tocando_plataforma()):
             self.velocidad_y = self.ALTURA_SALTO
         else:

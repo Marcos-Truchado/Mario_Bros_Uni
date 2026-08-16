@@ -85,8 +85,9 @@ class Tablero:
         self.pow = [(x, 143) for x in range(139, 140)]
         # creamos titulo
         pyxel.init(self.ancho, self.alto+8, title="Mario Bros")
-        # Cargamos el fichero pyxres que vamos a usar
+        # Cargamos el fichero pyxres que vamos a usar y su paleta clasica
         pyxel.load("assets/mario.pyxres")
+        pyxel.load_pal("assets/mario.pyxpal")
         # Creamos a Mario en la mitad de la pantalla en x e y = 200
         # Lo ponemos como privado para que solo el tablero pueda verlo y cambiarlo
         self.__mario = Mario(self.ancho /2, 200)
@@ -178,7 +179,7 @@ class Tablero:
 
     def update(self):
         # Si el usuario presiona la tecla A inicia el juego
-        if pyxel.btnp(pyxel.KEY_A):
+        if pyxel.btnp(pyxel.KEY_A) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_START):
             if not self.jugando:
                 self.jugando = True
                 self.fase = 1
@@ -187,7 +188,7 @@ class Tablero:
                 self.fase = 0
 
         # Si se presiona la tecla C se sale del juego
-        if pyxel.btnp(pyxel.KEY_C):
+        if pyxel.btnp(pyxel.KEY_C) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_BACK):
             if not self.jugando:
                 pyxel.quit()
         # Cargamos la portada inicial pre-juego
@@ -209,7 +210,7 @@ class Tablero:
             self.spawneo()
 
             # Salir del juego al presionar la tecla Q
-            if pyxel.btnp(pyxel.KEY_Q):
+            if pyxel.btnp(pyxel.KEY_Q) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_BACK):
                 pyxel.quit()
 
             # Actualización de la posición de Mario y gravedad aplicada a él
@@ -426,7 +427,7 @@ class Tablero:
     def actualizar_posicion_mario(self):
         #funcion para actualizar la posicion de mario , en ella se controla
         # el movimiento lateral y vertical
-        if pyxel.btnp(pyxel.KEY_SPACE):
+        if pyxel.btnp(pyxel.KEY_SPACE) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_A):
             self.__mario.realizar_salto('up')
         # en este fragmento asumimos que cuando self.camina =False mario ha
         # muerto por tanto esta sobre la plataforma la plataforma , cuando
@@ -448,10 +449,10 @@ class Tablero:
                             self.__mario.y = bloque[1] - self.__mario.sprite[4]
                             self.__mario.velocidad_y = 0
                             self.__mario.salto = False
-        if pyxel.btn(pyxel.KEY_RIGHT):
+        if pyxel.btn(pyxel.KEY_RIGHT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_RIGHT):
             self.__mario.mover('derecha', self.ancho)
             self.contador_teclas += 1
-        elif pyxel.btn(pyxel.KEY_LEFT):
+        elif pyxel.btn(pyxel.KEY_LEFT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_LEFT):
             self.__mario.mover('izquierda', self.ancho)
             self.contador_teclas += 1
         else:
@@ -551,8 +552,8 @@ class Tablero:
         if not self.jugando:
             # Dibujar la pantalla de inicio(portada)
             pyxel.text(125, 70, "MARIO BROS", pyxel.frame_count % 16)
-            pyxel.text(105, 100, "Presiona A para jugar", 7)
-            pyxel.text(105, 120, "Presiona c para cerrar", 7)
+            pyxel.text(105, 100, "Presiona A / START para jugar", 7)
+            pyxel.text(105, 120, "Presiona C para cerrar", 7)
         if not self.jugando:
             self.mario_portada.draw()
         else:
@@ -569,16 +570,17 @@ class Tablero:
                 for bloque in self.bloques:
                     if bloque[1] != 20:
                         pyxel.blt(bloque[0], bloque[1], *BLOQUE3_SPRITE)
-            if pyxel.btn(pyxel.KEY_RIGHT):
+            if pyxel.btn(pyxel.KEY_RIGHT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_RIGHT):
                 self.ULTIMA_DIRECCION = 1
-                pyxel.blt(self.__mario.x, self.__mario.y, *self.__mario.sprite)
-            elif pyxel.btn(pyxel.KEY_LEFT):
+            elif pyxel.btn(pyxel.KEY_LEFT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_LEFT):
                 self.ULTIMA_DIRECCION = 2
-                pyxel.blt(self.__mario.x, self.__mario.y, 2, 0, 0, 16, 16)
-            if self.ULTIMA_DIRECCION == 1:
-                pyxel.blt(self.__mario.x, self.__mario.y, *self.__mario.sprite)
-            elif self.ULTIMA_DIRECCION == 2:
-                pyxel.blt(self.__mario.x, self.__mario.y, 2, 0, 0,16, 16)
+            # Animacion de caminar: alterna los frames 1 y 2 mientras se
+            # mueve, frame 0 (quieto) cuando esta parado
+            moviendo = (pyxel.btn(pyxel.KEY_RIGHT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_RIGHT)
+                        or pyxel.btn(pyxel.KEY_LEFT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_LEFT))
+            frame = 1 + (pyxel.frame_count // 6) % 2 if moviendo else 0
+            pyxel.blt(self.__mario.x, self.__mario.y,
+                      *self.__mario.frame_sprite(self.ULTIMA_DIRECCION, frame))
             if self.camina==False:
                 if self.fase==1:
                     for bloque in self.bloques:
